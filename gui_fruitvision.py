@@ -6,19 +6,16 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtCore import Qt
 import subprocess
-import cv2
-from ultralytics import YOLO
 
 # Paths to scripts
 WEBCAM_SCRIPT = "webcam_yolo.py"
 SPLIT_SCRIPT = "realsense_split_yolo.py"
+IMAGE_DETECTION_SCRIPT = "image_detection.py"  # Path to the new image detection script
 LOGO_PATH = "logo.png"  # your logo file
-YOLO_MODEL_PATH = "best.pt"  # your trained model
 
 class FruitVisionGUI(QWidget):
     def __init__(self):
         super().__init__()
-        self.model = YOLO(YOLO_MODEL_PATH)  # Load YOLO model once
         self.initUI()
 
     def initUI(self):
@@ -172,18 +169,13 @@ class FruitVisionGUI(QWidget):
         subprocess.Popen([sys.executable, SPLIT_SCRIPT])
 
     def run_image_detection(self):
-        # Open file dialog
+        # Open file dialog to select image for detection
         options = QFileDialog.Options()
         filename, _ = QFileDialog.getOpenFileName(
             self, "Select Image for Detection", "", "Image Files (*.png *.jpg *.jpeg)", options=options
         )
         if filename:
-            img = cv2.imread(filename)
-            results = self.model(img)
-            annotated_frame = results[0].plot()
-            cv2.imshow("Image Detection Result", annotated_frame)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+            subprocess.Popen([sys.executable, IMAGE_DETECTION_SCRIPT, filename])
 
 # -----------------------------
 # Run GUI
