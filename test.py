@@ -1,91 +1,54 @@
 import cv2
-import numpy as np
-import pyrealsense2 as rs
 from ultralytics import YOLO
 
-# -----------------------------
-# Load YOLO model (segmentation enabled)
-# -----------------------------
-model = YOLO("best.pt")  # replace with your trained weights
+model = YOLO("best.pt")
+cap = cv2.VideoCapture(0)
 
-# -----------------------------
-# Configure Intel RealSense
-# -----------------------------
-pipeline = rs.pipeline()
-config = rs.config()
-config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+if not cap.isOpened():
+    print("Error: Could not open camera.")
+    exit()
 
-pipeline.start(config)
-colorizer = rs.colorizer()
-align = rs.align(rs.stream.color)
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+    results = model(frame, stream=True)
+    for r in results:
+        annotated_frame = r.plot()
+    cv2.imshow("YOLOv8 Segmentation", annotated_frame)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
 
-# -----------------------------
-# Draw professional box function
-# -----------------------------
-def draw_box(img, x1, y1, x2, y2, label, conf, depth, color=(0, 255, 0)):
-    thickness = 2
-    cv2.rectangle(img, (x1, y1), (x2, y2), color, thickness)
-    text = f"{label} {conf:.2f} {depth:.2f}m"
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    font_scale = 0.6
-    font_thickness = 2
-    (w, h), _ = cv2.getTextSize(text, font, font_scale, font_thickness)
-    cv2.rectangle(img, (x1, y1 - h - 8), (x1 + w + 4, y1), color, -1)
-    cv2.putText(img, text, (x1 + 2, y1 - 4), font, font_scale, (255, 255, 255), font_thickness)
+cap.release()
+cv2.destroyAllWindows()
+Possible Improvements to Mention:
 
-# -----------------------------
-# Main loop
-# -----------------------------
-try:
-    while True:
-        frames = pipeline.wait_for_frames()
-        aligned_frames = align.process(frames)
-        depth_frame = aligned_frames.get_depth_frame()
-        color_frame = aligned_frames.get_color_frame()
-        if not depth_frame or not color_frame:
-            continue
+Fine-Tuning the YOLO Model:
 
-        # Convert to numpy arrays
-        color_image = np.asanyarray(color_frame.get_data())
-        depth_colormap = np.asanyarray(colorizer.colorize(depth_frame).get_data())
+If you retrained or fine-tuned the YOLO model on a specific dataset, especially for fruits or fruit bunches, mention how this fine-tuning has improved the detection performance.
 
-        # Brighten RGB camera view
-        color_image = cv2.convertScaleAbs(color_image, alpha=1.25, beta=20)
+Data Augmentation:
 
-        # -----------------------------
-        # Run YOLO segmentation
-        # -----------------------------
-        results = model(color_image, stream=True)  # stream=True enables segmentation overlays
-        for r in results:
-            # r.masks contains segmentation masks
-            # r.plot() draws both masks and boxes
-            annotated_frame = r.plot()
+If you increased the variety of your training data using techniques like rotation, flipping, scaling, or adding noisy images, explain how this helped improve the model's ability to detect fruits in different conditions (e.g., bunches, varied lighting, etc.).
 
-            # Draw professional bounding boxes with depth
-            if hasattr(r, 'boxes') and r.boxes is not None:
-                for box in r.boxes:
-                    x1, y1, x2, y2 = box.xyxy[0].cpu().numpy().astype(int)
-                    cls = int(box.cls[0])
-                    conf = float(box.conf[0])
-                    label = model.names[cls]
+Adjusting the Model's Hyperparameters:
 
-                    # Get depth at center
-                    cx = int((x1 + x2) / 2)
-                    cy = int((y1 + y2) / 2)
-                    depth = depth_frame.get_distance(cx, cy)
+If you modified the confidence threshold, IOU (Intersection over Union) threshold, or the size of the images fed into the model, mention how this affected the detection accuracy.
 
-                    draw_box(annotated_frame, x1, y1, x2, y2, label, conf, depth)
+Post-processing Techniques:
 
-        # -----------------------------
-        # Split screen: RGB with segmentation | Depth
-        # -----------------------------
-        combined = np.hstack((annotated_frame, depth_colormap))
-        cv2.imshow("YOLOv8 Segmentation + RealSense Depth", combined)
+If you implemented post-processing steps like Non-Maximum Suppression (NMS) tuning to reduce false positives or combine overlapping detections, explain this and how it improved the results.
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+Using Additional Sensors or Features:
 
-finally:
-    pipeline.stop()
-    cv2.destroyAllWindows()
+If you incorporated other sensors (e.g., depth sensors) alongside the vision model to improve detection accuracy in cluttered or overlapping situations, mention this.
+
+Optimizing for Speed or Efficiency:
+
+If you made the algorithm run faster or more efficiently (e.g., using a faster variant of YOLO like YOLO-Tiny or optimizing inference time), highlight these improvements.
+
+Example Answer:
+
+If you have worked on any of these aspects, here’s a possible response you can craft:
+
+# "To improve the baseline YOLO algorithm, I have fine-tuned the model by training it on a specific dataset containing fruits in various lighting and clustering scenarios. This helped the model to better detect fruits in bunches. Additionally, I adjusted the confidence threshold to detect smaller or less confident objects, and I tuned the Intersection over Union (IoU) threshold to help merge detections more accurately. Lastly, I employed data augmentation techniques to further improve the model's robustness, ensuring it can handle varying fruit shapes and orientations."
