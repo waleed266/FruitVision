@@ -1,7 +1,3 @@
-Sure — here’s a simpler, plain-text version of your **README**:
-
----
-
 # Fruit Segmentation Project (YOLOv8)
 
 This project is about detecting and segmenting fruits using the YOLOv8 model.
@@ -61,12 +57,9 @@ Results showed good detection and segmentation accuracy for all five fruit class
 ---
 
 ## Credits
-
-Developed by **Ahmed [Your Last Name]**
+Developed by group 9785-S2-43
 Supervised by **Dr. Xing Wang**
 
 Special thanks to **Roboflow** for data annotation tools and **Ultralytics YOLO** for the training framework.
 
----
 
-Would you like me to make this one even shorter (like a few paragraphs only) for quick README display on GitHub, or keep this version with basic sections?
